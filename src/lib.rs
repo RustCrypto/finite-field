@@ -211,6 +211,11 @@ pub trait PrimeField: Field + From<u64> {
     /// representation.
     type Repr: Copy + Default + Send + Sync + 'static + AsRef<[u8]> + AsMut<[u8]>;
 
+    /// Byte order to use when interpreting `Repr`.
+    ///
+    /// Defaults to little endian unless specified.
+    const BYTE_ORDER: ByteOrder = ByteOrder::LittleEndian;
+
     /// Interpret a string of numbers as a (congruent) prime field element.
     /// Does not accept unnecessary leading zeroes or a blank string.
     ///
@@ -301,8 +306,8 @@ pub trait PrimeField: Field + From<u64> {
     /// Converts an element of the prime field into the standard byte representation for
     /// this field.
     ///
-    /// The endianness of the byte representation is implementation-specific. Generic
-    /// encodings of field elements should be treated as opaque.
+    /// The endianness of the byte representation is implementation-specific and may be specified
+    /// using the associated [`PrimeField::BYTE_ORDER`] constant.
     fn to_repr(&self) -> Self::Repr;
 
     /// Returns true iff this element is odd.
@@ -362,6 +367,16 @@ pub trait PrimeField: Field + From<u64> {
     /// It can be calculated by exponentiating [`Self::MULTIPLICATIVE_GENERATOR`] by `2^s`,
     /// where `s` is [`Self::S`].
     const DELTA: Self;
+}
+
+/// Byte order used when encoding/decoding field elements as bytestrings.
+#[derive(Debug)]
+pub enum ByteOrder {
+    /// Big endian.
+    BigEndian,
+
+    /// Little endian.
+    LittleEndian,
 }
 
 /// The subset of prime-order fields such that `(modulus - 1)` is divisible by `N`.
