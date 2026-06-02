@@ -31,9 +31,10 @@ mod full_limbs {
     #[test]
     fn random_masking_does_not_overflow() {
         use ff::Field;
+        use getrandom::{rand_core::UnwrapErr, SysRng};
 
-        let _ = F384p::random(&mut rand::rng());
-        let _ = F384p::try_from_rng(&mut rand::rngs::SysRng).unwrap();
+        let _ = F384p::random(&mut UnwrapErr(SysRng));
+        let _ = F384p::try_random(&mut SysRng).unwrap();
     }
 }
 
@@ -139,6 +140,8 @@ fn batch_inversion() {
 #[test]
 fn sqrt() {
     use ff::{Field, PrimeField};
+    use getrandom::{rand_core::UnwrapErr, SysRng};
+
     // A field modulo a prime such that p = 1 mod 4 and p != 1 mod 16
     #[derive(PrimeField)]
     #[PrimeFieldModulus = "357686312646216567629137"]
@@ -153,5 +156,6 @@ fn sqrt() {
 
     test(Fp::ZERO);
     test(Fp::ONE);
-    test(Fp::random(&mut rand::rng()));
+    test(Fp::random(&mut UnwrapErr(SysRng)));
+    test(Fp::try_random(&mut SysRng).unwrap());
 }

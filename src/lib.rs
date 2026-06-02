@@ -25,7 +25,6 @@ pub use bitvec::view::BitViewSized;
 #[cfg(feature = "bits")]
 use bitvec::{array::BitArray, order::Lsb0};
 
-use core::convert::Infallible;
 use core::fmt;
 use core::iter::{Product, Sum};
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -75,20 +74,22 @@ pub trait Field:
     /// The one element of the field, the multiplicative identity.
     const ONE: Self;
 
-    /// Returns an element chosen uniformly at random using a user-provided RNG.
+    /// Returns an element chosen uniformly at random using a user-provided infallible RNG.
+    ///
+    /// This is a convenience wrapper around [`Field::try_random`] for RNGs that cannot
+    /// fail. Use [`Field::try_random`] if your RNG may fail (for example, an OS-backed
+    /// entropy source).
     fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        Self::try_from_rng(rng)
-            .map_err(|e: Infallible| e)
-            .expect("Infallible failed")
-
-        // NOTE: once MSRV gets to 1.82 remove the map_err/expect and use
-        // let Ok(out) = Self::try_from_rng(rng);
-        // out
-        // See: https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html#omitting-empty-types-in-pattern-matching
+        let Ok(out) = Self::try_random(rng);
+        out
     }
 
-    /// Returns an element chosen uniformly at random using a user-provided RNG.
-    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error>;
+    /// Returns an element chosen uniformly at random using a user-provided fallible RNG.
+    ///
+    /// Returns `Err` propagating the RNG's error if the underlying RNG fails to produce
+    /// the randomness required to sample an element. Implementors of `Field` must
+    /// provide this method; [`Field::random`] is derived from it for infallible RNGs.
+    fn try_random<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error>;
 
     /// Returns true iff this element is zero.
     fn is_zero(&self) -> Choice {
@@ -303,15 +304,6 @@ pub trait PrimeField: Field + From<u64> {
     /// The endianness of the byte representation is implementation-specific. Generic
     /// encodings of field elements should be treated as opaque.
     fn to_repr(&self) -> Self::Repr;
-
-    /// Convert an element of the prime field into a little endian byte representation.
-    ///
-    /// The provided implementation assumes [`PrimeField::to_repr`] returns a little endian
-    /// representation and needs to be overridden if it uses big endian.
-    // TODO(tarcieri): this is largely a hack to make `group::Wnaf` work. Ideally it could go away.
-    fn to_le_repr(&self) -> Self::Repr {
-        self.to_repr()
-    }
 
     /// Returns true iff this element is odd.
     fn is_odd(&self) -> Choice;
