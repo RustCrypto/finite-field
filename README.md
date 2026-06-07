@@ -1,3 +1,5 @@
+Edit: this repo is defunct. Please use the upstream crate.
+
 # [RustCrypto]: ff
 
 `ff` is a finite field library written in pure Rust, with no `unsafe{}` code.
