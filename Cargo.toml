@@ -1,13 +1,13 @@
 [package]
 name = "finite-field"
-version = "0.0.0"
+description = "Traits and utilities for working with finite fields"
+version = "0.0.1"
 authors = [
     "Sean Bowe <ewillbefull@gmail.com>",
     "Jack Grigg <thestr4d@gmail.com>",
 ]
 edition = "2021"
 rust-version = "1.85"
-description = "Traits for finite fields"
 readme = "README.md"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/RustCrypto/finite-field"
