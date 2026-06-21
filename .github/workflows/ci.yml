@@ -17,7 +17,7 @@ jobs:
       - name: Run tests
         run: cargo test --verbose --all-features
       - name: Run tests (without bitvec)
-        run: cargo test --verbose --no-default-features --features derive
+        run: cargo test --verbose --no-default-features
       - name: Verify working directory is clean
         run: git diff --exit-code
 
@@ -37,7 +37,7 @@ jobs:
       - name: Run tests
         run: cargo test --verbose --all-features
       - name: Run tests (without bitvec)
-        run: cargo test --verbose --no-default-features --features derive
+        run: cargo test --verbose --no-default-features
       - name: Verify working directory is clean (excluding lockfile)
         run: git diff --exit-code ':!Cargo.lock'
 

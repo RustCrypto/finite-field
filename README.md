@@ -1,65 +1,20 @@
-Edit: this repo is defunct. Please use the upstream crate.
+# [RustCrypto]: `finite-field`
 
-# [RustCrypto]: ff
+`finite-field` is a finite field library written in pure Rust.
 
-`ff` is a finite field library written in pure Rust, with no `unsafe{}` code.
-
-This is a fork of https://github.com/zkcrypto/ff
-
-## RFC process
-
-This crate follows the [zkcrypto RFC process](https://zkcrypto.github.io/rfcs/).
-If you want to propose "substantial" changes to this crate (in particular to the
-`ff` traits), please [create an RFC](https://github.com/zkcrypto/rfcs) for wider
-discussion.
-
-## Disclaimers
-
-* This library does not provide constant-time guarantees. The traits enable downstream
-  users to expose constant-time logic, but `#[derive(PrimeField)]` in particular does not
-  generate constant-time code (even for trait methods that return constant-time-compatible
-  values).
+Fork of https://github.com/zkcrypto/ff
 
 ## Usage
 
-Add the `ff` crate to your `Cargo.toml`:
+Add the `finite-field` crate to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ff = "0.13"
+finite-field = "0.0.0"
 ```
 
-The `ff` crate contains the `Field` and `PrimeField` traits.
-See the **[documentation](https://docs.rs/ff/)** for more.
-
-### `#![derive(PrimeField)]`
-
-If you need an implementation of a prime field, this library also provides a procedural
-macro that will expand into an efficient implementation of a prime field when supplied
-with the modulus. `PrimeFieldGenerator` must be an element of Fp of p-1 order, that is
-also quadratic nonresidue.
-
-First, enable the `derive` crate feature:
-
-```toml
-[dependencies]
-ff = { version = "0.13", features = ["derive"] }
-```
-
-And then use the macro like so:
-
-```rust
-#[macro_use]
-extern crate ff;
-
-#[derive(PrimeField)]
-#[PrimeFieldModulus = "52435875175126190479447740508185965837690552500527637822603658699938581184513"]
-#[PrimeFieldGenerator = "7"]
-#[PrimeFieldReprEndianness = "little"]
-struct Fp([u64; 4]);
-```
-
-And that's it! `Fp` now implements `Field` and `PrimeField`.
+The `finite-field` crate contains the `Field` and `PrimeField` traits.
+See the **[documentation](https://docs.rs/finite-field)** for more.
 
 ## Minimum Supported Rust Version
 

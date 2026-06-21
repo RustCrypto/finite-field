@@ -14,10 +14,6 @@ pub use batch::*;
 
 pub mod helpers;
 
-#[cfg(feature = "derive")]
-#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
-pub use ff_derive::PrimeField;
-
 #[cfg(feature = "bits")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bits")))]
 pub use bitvec::view::BitViewSized;
@@ -415,39 +411,6 @@ pub trait WithSmallOrderMulGroup<const N: u8>: PrimeField {
 ///
 /// [discrete uniform distribution]: https://en.wikipedia.org/wiki/Discrete_uniform_distribution
 ///
-/// # Examples
-///
-/// ```
-/// # #[cfg(feature = "derive")] {
-/// # // Fake this so we don't actually need a dev-dependency on bls12_381.
-/// # mod bls12_381 {
-/// #     use finite_field::{Field, PrimeField};
-/// #
-/// #     #[derive(PrimeField)]
-/// #     #[PrimeFieldModulus = "52435875175126190479447740508185965837690552500527637822603658699938581184513"]
-/// #     #[PrimeFieldGenerator = "7"]
-/// #     #[PrimeFieldReprEndianness = "little"]
-/// #     pub struct Scalar([u64; 4]);
-/// #
-/// #     impl finite_field::FromUniformBytes<64> for Scalar {
-/// #         fn from_uniform_bytes(_bytes: &[u8; 64]) -> Self {
-/// #             // Fake impl for doctest
-/// #             Scalar::ONE
-/// #         }
-/// #     }
-/// # }
-/// #
-/// use blake2b_simd::blake2b;
-/// use bls12_381::Scalar;
-/// use finite_field::FromUniformBytes;
-///
-/// // `bls12_381::Scalar` implements `FromUniformBytes<64>`, and BLAKE2b (by default)
-/// // produces a 64-byte hash.
-/// let hash = blake2b(b"Some message");
-/// let val = Scalar::from_uniform_bytes(hash.as_array());
-/// # }
-/// ```
-///
 /// # Implementing `FromUniformBytes`
 ///
 /// [`Self::from_uniform_bytes`] should always be implemented by interpreting the provided
@@ -488,40 +451,4 @@ pub trait PrimeFieldBits: PrimeField {
 
     /// Returns the bits of the field characteristic (the modulus) in little-endian order.
     fn char_le_bits() -> FieldBits<Self::ReprBits>;
-}
-
-/// Functions and re-exported crates used by the [`PrimeField`] derive macro.
-#[cfg(feature = "derive")]
-#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
-pub mod derive {
-    pub use crate::arith_impl::*;
-
-    pub use {byteorder, rand_core, subtle};
-
-    #[cfg(feature = "bits")]
-    pub use bitvec;
-}
-
-#[cfg(feature = "derive")]
-mod arith_impl {
-    /// Computes `a - (b + borrow)`, returning the result and the new borrow.
-    #[inline(always)]
-    pub const fn sbb(a: u64, b: u64, borrow: u64) -> (u64, u64) {
-        let ret = (a as u128).wrapping_sub((b as u128) + ((borrow >> 63) as u128));
-        (ret as u64, (ret >> 64) as u64)
-    }
-
-    /// Computes `a + b + carry`, returning the result and the new carry over.
-    #[inline(always)]
-    pub const fn adc(a: u64, b: u64, carry: u64) -> (u64, u64) {
-        let ret = (a as u128) + (b as u128) + (carry as u128);
-        (ret as u64, (ret >> 64) as u64)
-    }
-
-    /// Computes `a + (b * c) + carry`, returning the result and the new carry over.
-    #[inline(always)]
-    pub const fn mac(a: u64, b: u64, c: u64, carry: u64) -> (u64, u64) {
-        let ret = (a as u128) + ((b as u128) * (c as u128)) + (carry as u128);
-        (ret as u64, (ret >> 64) as u64)
-    }
 }
