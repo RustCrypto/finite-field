@@ -1,9 +1,9 @@
 //! This module exercises the `ff_derive` procedural macros, to ensure that changes to the
-//! `ff` crate are reflected in `ff_derive`. It also uses the resulting field to test some
-//! of the APIs provided by `ff`, such as batch inversion.
+//! `finite_field` crate are reflected in `ff_derive`. It also uses the resulting field to test some
+//! of the APIs provided by `finite_field`, such as batch inversion.
 
 #[macro_use]
-extern crate rustcrypto_ff as ff;
+extern crate finite_field as ff;
 
 /// The BLS12-381 scalar field.
 #[derive(PrimeField)]

@@ -51,16 +51,16 @@ impl ReprEndianness {
     fn from_repr(&self, name: &syn::Ident, limbs: usize) -> proc_macro2::TokenStream {
         let read_repr = match self {
             ReprEndianness::Big => quote! {
-                ::rustcrypto_ff::derive::byteorder::BigEndian::read_u64_into(r.as_ref(), &mut inner[..]);
+                ::finite_field::derive::byteorder::BigEndian::read_u64_into(r.as_ref(), &mut inner[..]);
                 inner.reverse();
             },
             ReprEndianness::Little => quote! {
-                ::rustcrypto_ff::derive::byteorder::LittleEndian::read_u64_into(r.as_ref(), &mut inner[..]);
+                ::finite_field::derive::byteorder::LittleEndian::read_u64_into(r.as_ref(), &mut inner[..]);
             },
         };
 
         quote! {
-            use ::rustcrypto_ff::derive::byteorder::ByteOrder;
+            use ::finite_field::derive::byteorder::ByteOrder;
 
             let r = {
                 let mut inner = [0u64; #limbs];
@@ -81,15 +81,15 @@ impl ReprEndianness {
         let write_repr = match self {
             ReprEndianness::Big => quote! {
                 r.0.reverse();
-                ::rustcrypto_ff::derive::byteorder::BigEndian::write_u64_into(&r.0, &mut repr[..]);
+                ::finite_field::derive::byteorder::BigEndian::write_u64_into(&r.0, &mut repr[..]);
             },
             ReprEndianness::Little => quote! {
-                ::rustcrypto_ff::derive::byteorder::LittleEndian::write_u64_into(&r.0, &mut repr[..]);
+                ::finite_field::derive::byteorder::LittleEndian::write_u64_into(&r.0, &mut repr[..]);
             },
         };
 
         quote! {
-            use ::rustcrypto_ff::derive::byteorder::ByteOrder;
+            use ::finite_field::derive::byteorder::ByteOrder;
 
             let mut r = *self;
             r.mont_reduce(
@@ -329,8 +329,8 @@ fn prime_field_repr_impl(
         #[derive(Copy, Clone)]
         pub struct #repr(pub [u8; #bytes]);
 
-        impl ::rustcrypto_ff::derive::subtle::ConstantTimeEq for #repr {
-            fn ct_eq(&self, other: &#repr) -> ::rustcrypto_ff::derive::subtle::Choice {
+        impl ::finite_field::derive::subtle::ConstantTimeEq for #repr {
+            fn ct_eq(&self, other: &#repr) -> ::finite_field::derive::subtle::Choice {
                 self.0
                     .iter()
                     .zip(other.0.iter())
@@ -341,7 +341,7 @@ fn prime_field_repr_impl(
 
         impl ::core::cmp::PartialEq for #repr {
             fn eq(&self, other: &#repr) -> bool {
-                use ::rustcrypto_ff::derive::subtle::ConstantTimeEq;
+                use ::finite_field::derive::subtle::ConstantTimeEq;
                 self.ct_eq(other).into()
             }
         }
@@ -508,7 +508,7 @@ fn prime_field_constants_and_sqrt(
             );
 
             quote! {
-                use ::rustcrypto_ff::derive::subtle::ConstantTimeEq;
+                use ::finite_field::derive::subtle::ConstantTimeEq;
 
                 // Because r = 3 (mod 4)
                 // sqrt can be done with only one exponentiation,
@@ -517,7 +517,7 @@ fn prime_field_constants_and_sqrt(
                     #mod_plus_1_over_4
                 };
 
-                ::rustcrypto_ff::derive::subtle::CtOption::new(
+                ::finite_field::derive::subtle::CtOption::new(
                     sqrt,
                     (sqrt * &sqrt).ct_eq(self), // Only return Some if it's the square root.
                 )
@@ -533,7 +533,7 @@ fn prime_field_constants_and_sqrt(
             quote! {
                 // Tonelli-Shanks algorithm works for every remaining odd prime.
                 // https://eprint.iacr.org/2012/685.pdf (page 12, algorithm 5)
-                use ::rustcrypto_ff::derive::subtle::{ConditionallySelectable, ConstantTimeEq};
+                use ::finite_field::derive::subtle::{ConditionallySelectable, ConstantTimeEq};
 
                 // w = self^((t - 1) // 2)
                 let w = {
@@ -550,7 +550,7 @@ fn prime_field_constants_and_sqrt(
                 for max_v in (1..=S).rev() {
                     let mut k = 1;
                     let mut tmp = b.square();
-                    let mut j_less_than_v: ::rustcrypto_ff::derive::subtle::Choice = 1.into();
+                    let mut j_less_than_v: ::finite_field::derive::subtle::Choice = 1.into();
 
                     for j in 2..max_v {
                         let tmp_is_one = tmp.ct_eq(&#name::ONE);
@@ -569,7 +569,7 @@ fn prime_field_constants_and_sqrt(
                     v = k;
                 }
 
-                ::rustcrypto_ff::derive::subtle::CtOption::new(
+                ::finite_field::derive::subtle::CtOption::new(
                     x,
                     (x * &x).ct_eq(self), // Only return Some if it's the square root.
                 )
@@ -682,14 +682,14 @@ fn prime_field_impl(
                 let temp = get_temp(i);
                 gen.extend(quote! {
                     let k = #temp.wrapping_mul(INV);
-                    let (_, carry) = ::rustcrypto_ff::derive::mac(#temp, k, MODULUS_LIMBS.0[0], 0);
+                    let (_, carry) = ::finite_field::derive::mac(#temp, k, MODULUS_LIMBS.0[0], 0);
                 });
             }
 
             for j in 1..limbs {
                 let temp = get_temp(i + j);
                 gen.extend(quote! {
-                    let (#temp, carry) = ::rustcrypto_ff::derive::mac(#temp, k, MODULUS_LIMBS.0[#j], carry);
+                    let (#temp, carry) = ::finite_field::derive::mac(#temp, k, MODULUS_LIMBS.0[#j], carry);
                 });
             }
 
@@ -697,11 +697,11 @@ fn prime_field_impl(
 
             if i == 0 {
                 gen.extend(quote! {
-                    let (#temp, carry2) = ::rustcrypto_ff::derive::adc(#temp, 0, carry);
+                    let (#temp, carry2) = ::finite_field::derive::adc(#temp, 0, carry);
                 });
             } else {
                 gen.extend(quote! {
-                    let (#temp, carry2) = ::rustcrypto_ff::derive::adc(#temp, carry2, carry);
+                    let (#temp, carry2) = ::finite_field::derive::adc(#temp, carry2, carry);
                 });
             }
         }
@@ -730,11 +730,11 @@ fn prime_field_impl(
                     let temp = get_temp(i + j);
                     if i == 0 {
                         gen.extend(quote! {
-                            let (#temp, carry) = ::rustcrypto_ff::derive::mac(0, #a.0[#i], #a.0[#j], carry);
+                            let (#temp, carry) = ::finite_field::derive::mac(0, #a.0[#i], #a.0[#j], carry);
                         });
                     } else {
                         gen.extend(quote! {
-                            let (#temp, carry) = ::rustcrypto_ff::derive::mac(#temp, #a.0[#i], #a.0[#j], carry);
+                            let (#temp, carry) = ::finite_field::derive::mac(#temp, #a.0[#i], #a.0[#j], carry);
                         });
                     }
                 }
@@ -776,16 +776,16 @@ fn prime_field_impl(
             let temp1 = get_temp(i * 2 + 1);
             if i == 0 {
                 gen.extend(quote! {
-                    let (#temp0, carry) = ::rustcrypto_ff::derive::mac(0, #a.0[#i], #a.0[#i], 0);
+                    let (#temp0, carry) = ::finite_field::derive::mac(0, #a.0[#i], #a.0[#i], 0);
                 });
             } else {
                 gen.extend(quote! {
-                    let (#temp0, carry) = ::rustcrypto_ff::derive::mac(#temp0, #a.0[#i], #a.0[#i], carry);
+                    let (#temp0, carry) = ::finite_field::derive::mac(#temp0, #a.0[#i], #a.0[#i], carry);
                 });
             }
 
             gen.extend(quote! {
-                let (#temp1, carry) = ::rustcrypto_ff::derive::adc(#temp1, 0, carry);
+                let (#temp1, carry) = ::finite_field::derive::adc(#temp1, 0, carry);
             });
         }
 
@@ -821,11 +821,11 @@ fn prime_field_impl(
 
                 if i == 0 {
                     gen.extend(quote! {
-                        let (#temp, carry) = ::rustcrypto_ff::derive::mac(0, #a.0[#i], #b.0[#j], carry);
+                        let (#temp, carry) = ::finite_field::derive::mac(0, #a.0[#i], #b.0[#j], carry);
                     });
                 } else {
                     gen.extend(quote! {
-                        let (#temp, carry) = ::rustcrypto_ff::derive::mac(#temp, #a.0[#i], #b.0[#j], carry);
+                        let (#temp, carry) = ::finite_field::derive::mac(#temp, #a.0[#i], #b.0[#j], carry);
                     });
                 }
             }
@@ -857,7 +857,7 @@ fn prime_field_impl(
         let mod_minus_2 = pow_fixed::generate(&a, modulus - BigUint::from(2u64));
 
         quote! {
-            use ::rustcrypto_ff::derive::subtle::ConstantTimeEq;
+            use ::finite_field::derive::subtle::ConstantTimeEq;
 
             // By Euler's theorem, if `a` is coprime to `p` (i.e. `gcd(a, p) = 1`), then:
             //     a^-1 ≡ a^(phi(p) - 1) mod p
@@ -869,7 +869,7 @@ fn prime_field_impl(
                 #mod_minus_2
             };
 
-            ::rustcrypto_ff::derive::subtle::CtOption::new(inv, !#a.is_zero())
+            ::finite_field::derive::subtle::CtOption::new(inv, !#a.is_zero())
         }
     }
 
@@ -905,21 +905,21 @@ fn prime_field_impl(
 
     let prime_field_bits_impl = if cfg!(feature = "bits") {
         let to_le_bits_impl = ReprEndianness::Little.to_repr(
-            quote! {::rustcrypto_ff::derive::bitvec::array::BitArray::new},
+            quote! {::finite_field::derive::bitvec::array::BitArray::new},
             &mont_reduce_self_params,
             limbs,
         );
 
         Some(quote! {
-            impl ::rustcrypto_ff::PrimeFieldBits for #name {
+            impl ::finite_field::PrimeFieldBits for #name {
                 type ReprBits = REPR_BITS;
 
-                fn to_le_bits(&self) -> ::rustcrypto_ff::FieldBits<REPR_BITS> {
+                fn to_le_bits(&self) -> ::finite_field::FieldBits<REPR_BITS> {
                     #to_le_bits_impl
                 }
 
-                fn char_le_bits() -> ::rustcrypto_ff::FieldBits<REPR_BITS> {
-                    ::rustcrypto_ff::FieldBits::new(MODULUS)
+                fn char_le_bits() -> ::finite_field::FieldBits<REPR_BITS> {
+                    ::finite_field::FieldBits::new(MODULUS)
                 }
             }
         })
@@ -940,21 +940,21 @@ fn prime_field_impl(
 
         impl ::core::default::Default for #name {
             fn default() -> #name {
-                use ::rustcrypto_ff::Field;
+                use ::finite_field::Field;
                 #name::ZERO
             }
         }
 
-        impl ::rustcrypto_ff::derive::subtle::ConstantTimeEq for #name {
-            fn ct_eq(&self, other: &#name) -> ::rustcrypto_ff::derive::subtle::Choice {
-                use ::rustcrypto_ff::PrimeField;
+        impl ::finite_field::derive::subtle::ConstantTimeEq for #name {
+            fn ct_eq(&self, other: &#name) -> ::finite_field::derive::subtle::Choice {
+                use ::finite_field::PrimeField;
                 self.to_repr().ct_eq(&other.to_repr())
             }
         }
 
         impl ::core::cmp::PartialEq for #name {
             fn eq(&self, other: &#name) -> bool {
-                use ::rustcrypto_ff::derive::subtle::ConstantTimeEq;
+                use ::finite_field::derive::subtle::ConstantTimeEq;
                 self.ct_eq(other).into()
             }
         }
@@ -964,7 +964,7 @@ fn prime_field_impl(
         impl ::core::fmt::Debug for #name
         {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use ::rustcrypto_ff::PrimeField;
+                use ::finite_field::PrimeField;
                 write!(f, "{}({:?})", stringify!(#name), self.to_repr())
             }
         }
@@ -1005,20 +1005,20 @@ fn prime_field_impl(
 
         impl From<#name> for #repr {
             fn from(e: #name) -> #repr {
-                use ::rustcrypto_ff::PrimeField;
+                use ::finite_field::PrimeField;
                 e.to_repr()
             }
         }
 
         impl<'a> From<&'a #name> for #repr {
             fn from(e: &'a #name) -> #repr {
-                use ::rustcrypto_ff::PrimeField;
+                use ::finite_field::PrimeField;
                 e.to_repr()
             }
         }
 
-        impl ::rustcrypto_ff::derive::subtle::ConditionallySelectable for #name {
-            fn conditional_select(a: &#name, b: &#name, choice: ::rustcrypto_ff::derive::subtle::Choice) -> #name {
+        impl ::finite_field::derive::subtle::ConditionallySelectable for #name {
+            fn conditional_select(a: &#name, b: &#name, choice: ::finite_field::derive::subtle::Choice) -> #name {
                 let mut res = [0u64; #limbs];
                 for i in 0..#limbs {
                     res[i] = u64::conditional_select(&a.0[i], &b.0[i], choice);
@@ -1032,7 +1032,7 @@ fn prime_field_impl(
 
             #[inline]
             fn neg(self) -> #name {
-                use ::rustcrypto_ff::Field;
+                use ::finite_field::Field;
 
                 let mut ret = self;
                 if !ret.is_zero_vartime() {
@@ -1165,7 +1165,7 @@ fn prime_field_impl(
 
         impl<T: ::core::borrow::Borrow<#name>> ::core::iter::Sum<T> for #name {
             fn sum<I: Iterator<Item = T>>(iter: I) -> Self {
-                use ::rustcrypto_ff::Field;
+                use ::finite_field::Field;
 
                 iter.fold(Self::ZERO, |acc, item| acc + item.borrow())
             }
@@ -1173,31 +1173,31 @@ fn prime_field_impl(
 
         impl<T: ::core::borrow::Borrow<#name>> ::core::iter::Product<T> for #name {
             fn product<I: Iterator<Item = T>>(iter: I) -> Self {
-                use ::rustcrypto_ff::Field;
+                use ::finite_field::Field;
 
                 iter.fold(Self::ONE, |acc, item| acc * item.borrow())
             }
         }
 
-        impl ::rustcrypto_ff::PrimeField for #name {
+        impl ::finite_field::PrimeField for #name {
             type Repr = #repr;
 
-            fn from_repr(r: #repr) -> ::rustcrypto_ff::derive::subtle::CtOption<#name> {
+            fn from_repr(r: #repr) -> ::finite_field::derive::subtle::CtOption<#name> {
                 #from_repr_impl
 
                 // Try to subtract the modulus
                 let borrow = r.0.iter().zip(MODULUS_LIMBS.0.iter()).fold(0, |borrow, (a, b)| {
-                    ::rustcrypto_ff::derive::sbb(*a, *b, borrow).1
+                    ::finite_field::derive::sbb(*a, *b, borrow).1
                 });
 
                 // If the element is smaller than MODULUS then the
                 // subtraction will underflow, producing a borrow value
                 // of 0xffff...ffff. Otherwise, it'll be zero.
-                let is_some = ::rustcrypto_ff::derive::subtle::Choice::from((borrow as u8) & 1);
+                let is_some = ::finite_field::derive::subtle::Choice::from((borrow as u8) & 1);
 
                 // Convert to Montgomery form by computing
                 // (a.R^0 * R^2) / R = a.R
-                ::rustcrypto_ff::derive::subtle::CtOption::new(r * &R2, is_some)
+                ::finite_field::derive::subtle::CtOption::new(r * &R2, is_some)
             }
 
             fn from_repr_vartime(r: #repr) -> Option<#name> {
@@ -1215,7 +1215,7 @@ fn prime_field_impl(
             }
 
             #[inline(always)]
-            fn is_odd(&self) -> ::rustcrypto_ff::derive::subtle::Choice {
+            fn is_odd(&self) -> ::finite_field::derive::subtle::Choice {
                 let mut r = *self;
                 r.mont_reduce(
                     #mont_reduce_self_params
@@ -1223,7 +1223,7 @@ fn prime_field_impl(
 
                 // TODO: This looks like a constant-time result, but r.mont_reduce() is
                 // currently implemented using variable-time code.
-                ::rustcrypto_ff::derive::subtle::Choice::from((r.0[0] & 1) as u8)
+                ::finite_field::derive::subtle::Choice::from((r.0[0] & 1) as u8)
             }
 
             const MODULUS: &'static str = MODULUS_STR;
@@ -1247,12 +1247,12 @@ fn prime_field_impl(
 
         #prime_field_bits_impl
 
-        impl ::rustcrypto_ff::Field for #name {
+        impl ::finite_field::Field for #name {
             const ZERO: Self = #name([0; #limbs]);
             const ONE: Self = R;
 
             /// Computes a uniformly random element using rejection sampling.
-            fn try_random<R: ::rustcrypto_ff::derive::rand_core::TryRng + ?Sized>(rng: &mut R) -> ::core::result::Result<Self, R::Error> {
+            fn try_random<R: ::finite_field::derive::rand_core::TryRng + ?Sized>(rng: &mut R) -> ::core::result::Result<Self, R::Error> {
                 loop {
                     let mut tmp = {
                         let mut repr = [0u64; #limbs];
@@ -1299,7 +1299,7 @@ fn prime_field_impl(
                 ret
             }
 
-            fn invert(&self) -> ::rustcrypto_ff::derive::subtle::CtOption<Self> {
+            fn invert(&self) -> ::finite_field::derive::subtle::CtOption<Self> {
                 #invert_impl
             }
 
@@ -1309,11 +1309,11 @@ fn prime_field_impl(
                 #squaring_impl
             }
 
-            fn sqrt_ratio(num: &Self, div: &Self) -> (::rustcrypto_ff::derive::subtle::Choice, Self) {
-                ::rustcrypto_ff::helpers::sqrt_ratio_generic(num, div)
+            fn sqrt_ratio(num: &Self, div: &Self) -> (::finite_field::derive::subtle::Choice, Self) {
+                ::finite_field::helpers::sqrt_ratio_generic(num, div)
             }
 
-            fn sqrt(&self) -> ::rustcrypto_ff::derive::subtle::CtOption<Self> {
+            fn sqrt(&self) -> ::finite_field::derive::subtle::CtOption<Self> {
                 #sqrt_impl
             }
         }
@@ -1348,7 +1348,7 @@ fn prime_field_impl(
                 let mut carry = 0;
 
                 for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
-                    let (new_a, new_carry) = ::rustcrypto_ff::derive::adc(*a, *b, carry);
+                    let (new_a, new_carry) = ::finite_field::derive::adc(*a, *b, carry);
                     *a = new_a;
                     carry = new_carry;
                 }
@@ -1359,7 +1359,7 @@ fn prime_field_impl(
                 let mut borrow = 0;
 
                 for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
-                    let (new_a, new_borrow) = ::rustcrypto_ff::derive::sbb(*a, *b, borrow);
+                    let (new_a, new_borrow) = ::finite_field::derive::sbb(*a, *b, borrow);
                     *a = new_a;
                     borrow = new_borrow;
                 }
